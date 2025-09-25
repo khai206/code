@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Rắn Săn Mồi - Phiên bản Nâng cấp</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #0fcc45, #ff9f1c, #e63946);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(15, 204, 69, 0.5);
+            margin-bottom: 10px;
+            animation: titleGlow 3s infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 10px rgba(15, 204, 69, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(255, 159, 28, 0.7); }
+            100% { text-shadow: 0 0 15px rgba(230, 57, 70, 0.6); }
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 700px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .score-container, .high-score-container, .map-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .score-label, .high-score-label, .map-label {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .score-value, .high-score-value, .map-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0fcc45;
+        }
+
+        .game-board {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            height: 450px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .game-buttons {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        button:hover:after {
+            left: 100%;
+        }
+
+        #start-btn {
+            background: linear-gradient(45deg, #0fcc45, #0db33d);
+            color: white;
+        }
+
+        #start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(15, 204, 69, 0.4);
+        }
+
+        #pause-btn {
+            background: linear-gradient(45deg, #ff9f1c, #e88c0c);
+            color: white;
+        }
+
+        #pause-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(255, 159, 28, 0.4);
+        }
+
+        #reset-btn {
+            background: linear-gradient(45deg, #e63946, #d32f2f);
+            color: white;
+        }
+
+        #reset-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(230, 57, 70, 0.4);
+        }
+
+        .map-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .map-btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .map-btn.active {
+            background: #0fcc45;
+            box-shadow: 0 0 10px rgba(15, 204, 69, 0.5);
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .instructions h3 {
+            color: #0fcc45;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .instructions li:before {
+            content: "•";
+            color: #0fcc45;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-over h2 {
+            font-size: 4rem;
+            background: linear-gradient(45deg, #e63946, #ff9f1c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(230, 57, 70, 0.5);
+            animation: gameOverPulse 2s infinite;
+        }
+
+        @keyframes gameOverPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .game-over p {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        #restart-btn {
+            background: linear-gradient(45deg, #0fcc45, #0db33d);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+        }
+
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            width: 200px;
+            height: 200px;
+            margin-top: 20px;
+        }
+
+        .mobile-controls button {
+            width: 100%;
+            height: 100%;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .up-btn {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .left-btn {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .right-btn {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .down-btn {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .eating-effect {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff9f1c, transparent);
+            pointer-events: none;
+            opacity: 0;
+            animation: eatParticles 0.5s ease-out;
+        }
+
+        @keyframes eatParticles {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: grid;
+            }
+            
+            .game-board {
+                height: 350px;
+            }
+            
+            .game-title {
+                font-size: 2.2rem;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-board {
+                height: 300px;
+            }
+            
+            .game-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .map-selector {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">RẮN SĂN MỒI NÂNG CẤP</h1>
+        </div>
+        
+        <div class="game-info">
+            <div class="score-container">
+                <div class="score-label">ĐIỂM SỐ</div>
+                <div class="score-value">0</div>
+            </div>
+            <div class="high-score-container">
+                <div class="high-score-label">ĐIỂM CAO NHẤT</div>
+                <div class="high-score-value">0</div>
+            </div>
+            <div class="map-container">
+                <div class="map-label">BẢN ĐỒ</div>
+                <div class="map-value">Cổ điển</div>
+            </div>
+        </div>
+        
+        <div class="game-board">
+            <canvas id="game-canvas"></canvas>
+            <div class="game-over">
+                <h2>GAME OVER</h2>
+                <p>Điểm số của bạn: <span id="final-score">0</span></p>
+                <button id="restart-btn">Chơi lại</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="game-buttons">
+                <button id="start-btn">Bắt đầu</button>
+                <button id="pause-btn">Tạm dừng</button>
+                <button id="reset-btn">Chơi lại</button>
+            </div>
+            
+            <div class="map-selector">
+                <button class="map-btn active" data-map="classic">Cổ điển</button>
+                <button class="map-btn" data-map="desert">Sa mạc</button>
+                <button class="map-btn" data-map="ocean">Đại dương</button>
+                <button class="map-btn" data-map="clouds">Trên mây</button>
+            </div>
+            
+            <div class="mobile-controls">
+                <button class="up-btn">↑</button>
+                <button class="left-btn">←</button>
+                <button class="right-btn">→</button>
+                <button class="down-btn">↓</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Hướng dẫn chơi:</h3>
+            <ul>
+                <li>Sử dụng các phím mũi tên (↑, ↓, ←, →) để điều khiển hướng di chuyển của rắn</li>
+                <li>Ăn thức ăn để tăng điểm số và chiều dài của rắn</li>
+                <li>Tránh va vào tường hoặc vào chính cơ thể của rắn</li>
+                <li>Tốc độ sẽ tăng dần khi bạn ăn được nhiều thức ăn</li>
+                <li>Chọn các bản đồ khác nhau để trải nghiệm cảnh quan đa dạng</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Âm thanh cho game -->
+    <audio id="eat-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="game-over-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-over-470.mp3" preload="auto"></audio>
+
+    <script>
+        // Lấy các phần tử DOM
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreValue = document.querySelector('.score-value');
+        const highScoreValue = document.querySelector('.high-score-value');
+        const mapValue = document.querySelector('.map-value');
+        const finalScore = document.getElementById('final-score');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const gameOverScreen = document.querySelector('.game-over');
+        const mapButtons = document.querySelectorAll('.map-btn');
+        const eatSound = document.getElementById('eat-sound');
+        const gameOverSound = document.getElementById('game-over-sound');
+        
+        // Kích thước game
+        const gridSize = 20;
+        let canvasWidth = canvas.parentElement.clientWidth;
+        let canvasHeight = canvas.parentElement.clientHeight;
+        
+        // Đảm bảo kích thước canvas phù hợp với grid
+        canvasWidth = Math.floor(canvasWidth / gridSize) * gridSize;
+        canvasHeight = Math.floor(canvasHeight / gridSize) * gridSize;
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        // Biến game
+        let snake = [];
+        let food = {};
+        let direction = 'right';
+        let nextDirection = 'right';
+        let gameSpeed = 150; // ms
+        let score = 0;
+        let highScore = localStorage.getItem('snakeHighScore') || 0;
+        let gameRunning = false;
+        let gameLoop;
+        let currentMap = 'classic';
+        
+        // Các loại map
+        const maps = {
+            classic: {
+                background: '#0d1b2a',
+                border: '#1b263b',
+                snakeHead: '#0fcc45',
+                snakeBody: '#0db33d',
+                snakeScale: '#0a8a2f',
+                food: '#e63946',
+                foodEffect: '#ff9f1c'
+            },
+            desert: {
+                background: '#e6b17e',
+                border: '#b38b6d',
+                snakeHead: '#8b4513',
+                snakeBody: '#a0522d',
+                snakeScale: '#cd853f',
+                food: '#ff4500',
+                foodEffect: '#ff8c00'
+            },
+            ocean: {
+                background: '#1e3a5f',
+                border: '#2a4b7c',
+                snakeHead: '#00bfff',
+                snakeBody: '#1e90ff',
+                snakeScale: '#4682b4',
+                food: '#ff1493',
+                foodEffect: '#ff69b4'
+            },
+            clouds: {
+                background: '#87ceeb',
+                border: '#b0e0e6',
+                snakeHead: '#ffffff',
+                snakeBody: '#f0f8ff',
+                snakeScale: '#e6e6fa',
+                food: '#ffd700',
+                foodEffect: '#fffacd'
+            }
+        };
+        
+        // Cập nhật điểm cao nhất
+        highScoreValue.textContent = highScore;
+        
+        // Khởi tạo game
+        function initGame() {
+            // Tạo rắn ban đầu (3 phần)
+            snake = [
+                {x: 5 * gridSize, y: 10 * gridSize},
+                {x: 4 * gridSize, y: 10 * gridSize},
+                {x: 3 * gridSize, y: 10 * gridSize}
+            ];
+            
+            // Tạo thức ăn
+            generateFood();
+            
+            // Đặt lại hướng
+            direction = 'right';
+            nextDirection = 'right';
+            
+            // Đặt lại điểm số
+            score = 0;
+            scoreValue.textContent = score;
+            
+            // Đặt lại tốc độ
+            gameSpeed = 150;
+            
+            // Ẩn màn hình kết thúc
+            gameOverScreen.style.display = 'none';
+        }
+        
+        // Tạo thức ăn mới
+        function generateFood() {
+            const maxX = canvasWidth / gridSize - 1;
+            const maxY = canvasHeight / gridSize - 1;
+            
+            let newFood;
+            let onSnake;
+            
+            do {
+                onSnake = false;
+                newFood = {
+                    x: Math.floor(Math.random() * maxX) * gridSize,
+                    y: Math.floor(Math.random() * maxY) * gridSize
+                };
+                
+                // Kiểm tra xem thức ăn có trùng với rắn không
+                for (let segment of snake) {
+                    if (segment.x === newFood.x && segment.y === newFood.y) {
+                        onSnake = true;
+                        break;
+                    }
+                }
+            } while (onSnake);
+            
+            food = newFood;
+        }
+        
+        // Hiệu ứng khi ăn thức ăn
+        function createEatingEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'eating-effect';
+            effect.style.left = `${x}px`;
+            effect.style.top = `${y}px`;
+            document.querySelector('.game-board').appendChild(effect);
+            
+            // Phát âm thanh
+            eatSound.currentTime = 0;
+            eatSound.play();
+            
+            // Xóa hiệu ứng sau khi hoàn thành
+            setTimeout(() => {
+                effect.remove();
+            }, 500);
+        }
+        
+        // Vẽ game
+        function draw() {
+            const map = maps[currentMap];
+            
+            // Vẽ nền với hiệu ứng
+            ctx.fillStyle = map.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ hiệu ứng nền tùy theo map
+            drawBackgroundEffect();
+            
+            // Vẽ rắn với thiết kế đẹp hơn
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Đầu rắn
+                    ctx.fillStyle = map.snakeHead;
+                    ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+                    
+                    // Hiệu ứng bóng cho đầu rắn
+                    ctx.shadowColor = map.snakeHead;
+                    ctx.shadowBlur = 10;
+                    ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+                    ctx.shadowBlur = 0;
+                    
+                    // Mắt rắn
+                    ctx.fillStyle = '#000';
+                    const eyeSize = gridSize / 5;
+                    
+                    if (direction === 'right') {
+                        ctx.fillRect(segment.x + gridSize - eyeSize*2, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize*2, segment.y + gridSize - eyeSize*2, eyeSize, eyeSize);
+                    } else if (direction === 'left') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize*2, eyeSize, eyeSize);
+                    } else if (direction === 'up') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize*2, segment.y + eyeSize, eyeSize, eyeSize);
+                    } else if (direction === 'down') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize*2, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize*2, segment.y + gridSize - eyeSize*2, eyeSize, eyeSize);
+                    }
+                    
+                    // Lưỡi rắn
+                    ctx.fillStyle = '#ff6b6b';
+                    if (direction === 'right') {
+                        ctx.fillRect(segment.x + gridSize, segment.y + gridSize/2 - 1, gridSize/3, 2);
+                    } else if (direction === 'left') {
+                        ctx.fillRect(segment.x - gridSize/3, segment.y + gridSize/2 - 1, gridSize/3, 2);
+                    } else if (direction === 'up') {
+                        ctx.fillRect(segment.x + gridSize/2 - 1, segment.y - gridSize/3, 2, gridSize/3);
+                    } else if (direction === 'down') {
+                        ctx.fillRect(segment.x + gridSize/2 - 1, segment.y + gridSize, 2, gridSize/3);
+                    }
+                } else {
+                    // Thân rắn với hiệu ứng vảy chi tiết
+                    ctx.fillStyle = map.snakeBody;
+                    ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+                    
+                    // Hiệu ứng vảy
+                    ctx.fillStyle = map.snakeScale;
+                    const scaleSize = gridSize / 4;
+                    ctx.fillRect(segment.x + scaleSize/2, segment.y + scaleSize/2, scaleSize, scaleSize);
+                    ctx.fillRect(segment.x + gridSize - scaleSize*1.5, segment.y + scaleSize/2, scaleSize, scaleSize);
+                    ctx.fillRect(segment.x + scaleSize/2, segment.y + gridSize - scaleSize*1.5, scaleSize, scaleSize);
+                    ctx.fillRect(segment.x + gridSize - scaleSize*1.5, segment.y + gridSize - scaleSize*1.5, scaleSize, scaleSize);
+                }
+            });
+            
+            // Vẽ thức ăn với hiệu ứng
+            ctx.fillStyle = map.food;
+            ctx.beginPath();
+            ctx.arc(food.x + gridSize/2, food.y + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hiệu ứng cho thức ăn
+            ctx.fillStyle = map.foodEffect;
+            ctx.beginPath();
+            ctx.arc(food.x + gridSize/2, food.y + gridSize/2, gridSize/4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hiệu ứng ánh sáng cho thức ăn
+            ctx.shadowColor = map.foodEffect;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = map.food;
+            ctx.beginPath();
+            ctx.arc(food.x + gridSize/2, food.y + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        // Vẽ hiệu ứng nền tùy theo map
+        function drawBackgroundEffect() {
+            const map = maps[currentMap];
+            
+            if (currentMap === 'desert') {
+                // Vẽ cát
+                for (let i = 0; i < 20; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const size = Math.random() * 3 + 1;
+                    
+                    ctx.fillStyle = '#d2b48c';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (currentMap === 'ocean') {
+                // Vẽ bong bóng
+                for (let i = 0; i < 15; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const size = Math.random() * 5 + 2;
+                    
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            } else if (currentMap === 'clouds') {
+                // Vẽ mây
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const size = Math.random() * 15 + 10;
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // Cập nhật game
+        function update() {
+            // Cập nhật hướng
+            direction = nextDirection;
+            
+            // Di chuyển rắn
+            const head = {x: snake[0].x, y: snake[0].y};
+            
+            switch(direction) {
+                case 'up':
+                    head.y -= gridSize;
+                    break;
+                case 'down':
+                    head.y += gridSize;
+                    break;
+                case 'left':
+                    head.x -= gridSize;
+                    break;
+                case 'right':
+                    head.x += gridSize;
+                    break;
+            }
+            
+            // Kiểm tra va chạm với tường
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                gameOver();
+                return;
+            }
+            
+            // Kiểm tra va chạm với chính mình
+            for (let i = 0; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Thêm đầu mới
+            snake.unshift(head);
+            
+            // Kiểm tra ăn thức ăn
+            if (head.x === food.x && head.y === food.y) {
+                // Tạo hiệu ứng
+                createEatingEffect(food.x + gridSize/2, food.y + gridSize/2);
+                
+                // Tăng điểm
+                score += 10;
+                scoreValue.textContent = score;
+                
+                // Tạo thức ăn mới
+                generateFood();
+                
+                // Tăng tốc độ (giảm thời gian delay)
+                if (gameSpeed > 50) {
+                    gameSpeed -= 2;
+                }
+            } else {
+                // Nếu không ăn thức ăn, xóa đuôi
+                snake.pop();
+            }
+        }
+        
+        // Vòng lặp game
+        function game() {
+            update();
+            draw();
+            
+            if (gameRunning) {
+                gameLoop = setTimeout(game, gameSpeed);
+            }
+        }
+        
+        // Kết thúc game
+        function gameOver() {
+            gameRunning = false;
+            clearTimeout(gameLoop);
+            
+            // Phát âm thanh game over
+            gameOverSound.currentTime = 0;
+            gameOverSound.play();
+            
+            // Cập nhật điểm cao nhất
+            if (score > highScore) {
+                highScore = score;
+                highScoreValue.textContent = highScore;
+                localStorage.setItem('snakeHighScore', highScore);
+            }
+            
+            // Hiển thị màn hình kết thúc
+            finalScore.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Xử lý sự kiện bàn phím
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
+                case ' ':
+                    if (!gameRunning) {
+                        startGame();
+                    } else {
+                        togglePause();
+                    }
+                    break;
+            }
+        });
+        
+        // Xử lý sự kiện nút
+        startBtn.addEventListener('click', () => {
+            if (!gameRunning) {
+                startGame();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', togglePause);
+        
+        resetBtn.addEventListener('click', () => {
+            if (gameRunning) {
+                clearTimeout(gameLoop);
+                gameRunning = false;
+            }
+            initGame();
+            draw();
+        });
+        
+        restartBtn.addEventListener('click', () => {
+            initGame();
+            startGame();
+        });
+        
+        // Xử lý chọn map
+        mapButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Xóa active class từ tất cả các nút
+                mapButtons.forEach(btn => btn.classList.remove('active'));
+                // Thêm active class cho nút được chọn
+                button.classList.add('active');
+                // Cập nhật map hiện tại
+                currentMap = button.getAttribute('data-map');
+                mapValue.textContent = button.textContent;
+                // Vẽ lại game với map mới
+                draw();
+            });
+        });
+        
+        // Xử lý điều khiển di động
+        document.querySelector('.up-btn').addEventListener('click', () => {
+            if (direction !== 'down') nextDirection = 'up';
+        });
+        
+        document.querySelector('.down-btn').addEventListener('click', () => {
+            if (direction !== 'up') nextDirection = 'down';
+        });
+        
+        document.querySelector('.left-btn').addEventListener('click', () => {
+            if (direction !== 'right') nextDirection = 'left';
+        });
+        
+        document.querySelector('.right-btn').addEventListener('click', () => {
+            if (direction !== 'left') nextDirection = 'right';
+        });
+        
+        // Hàm bắt đầu game
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                game();
+            }
+        }
+        
+        // Hàm tạm dừng/tiếp tục game
+        function togglePause() {
+            if (gameRunning) {
+                gameRunning = false;
+                clearTimeout(gameLoop);
+                pauseBtn.textContent = 'Tiếp tục';
+            } else {
+                gameRunning = true;
+                game();
+                pauseBtn.textContent = 'Tạm dừng';
+            }
+        }
+        
+        // Khởi tạo game lần đầu
+        initGame();
+        draw();
+        
+        // Xử lý thay đổi kích thước cửa sổ
+        window.addEventListener('resize', () => {
+            // Cập nhật kích thước canvas
+            canvasWidth = canvas.parentElement.clientWidth;
+            canvasHeight = canvas.parentElement.clientHeight;
+            
+            canvasWidth = Math.floor(canvasWidth / gridSize) * gridSize;
+            canvasHeight = Math.floor(canvasHeight / gridSize) * gridSize;
+            
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            // Vẽ lại game
+            draw();
+        });
+    </script>
+</body>
+</html>
